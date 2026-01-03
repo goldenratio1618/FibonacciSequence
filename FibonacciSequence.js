@@ -51,7 +51,7 @@ var init = () => {
     {
         let getDesc = (level) => "c_1=" + getC1(level).toString(0);
         let getInfo = (level) => "c_1=" + getC1(level).toString(0);
-        c1 = theory.createUpgrade(0, currency, new CustomCost(level => Fibonacci(level)));
+        c1 = theory.createUpgrade(0, currency, new CustomCost(level => Fibonacci(level), getFibCostC1Sum, getFibCostC1Max));
         c1.getDescription = (_) => Utils.getMath(getDesc(c1.level));
         c1.getInfo = (amount) => Utils.getMathTo(getInfo(c1.level), getInfo(c1.level + amount));
     }
@@ -88,7 +88,7 @@ var init = () => {
     {
         let getDesc = (level) => "f_1=" + getF1(level).toString(0);
         let getInfo = (level) => "f_1=" + getF1(level).toString(0);
-        f1 = theory.createUpgrade(4, currencyF, new CustomCost(level => Fibonacci(level + 1)));
+        f1 = theory.createUpgrade(4, currencyF, new CustomCost(level => Fibonacci(level + 1), getFibCostF1Sum, getFibCostF1Max));
         f1.getDescription = (_) => Utils.getMath(getDesc(f1.level));
         f1.getInfo = (amount) => Utils.getMathTo(getInfo(f1.level), getInfo(f1.level + amount));
         f1.isAvailable = false;
@@ -485,12 +485,6 @@ var getLucasNumberCached = (index) => {
     return lucasCostCache[index];
 };
 
-var getLucasSum = (fromIndex, toIndex) => {
-    if (toIndex <= fromIndex) return BigNumber.ZERO;
-    ensureLucasCostCache(toIndex + 1);
-    return lucasCostCache[toIndex + 1] - lucasCostCache[fromIndex + 1];
-};
-
 var isLessOrEqual = (left, right) => (left - right).sign <= 0;
 
 var getMaxFromCost = (fromLevel, currency, sumFn) => {
@@ -500,7 +494,7 @@ var getMaxFromCost = (fromLevel, currency, sumFn) => {
     let low = 0;
     let high = 1;
 
-    while (isLessOrEqual(sumFn(fromLevel, fromLevel + high), available)) {
+    while (isLessOrEqual(sumFn(fromLevel, high), available)) {
         low = high;
         high *= 2;
         if (high > 1e9) break;
@@ -508,7 +502,7 @@ var getMaxFromCost = (fromLevel, currency, sumFn) => {
 
     while (low + 1 < high) {
         let mid = Math.floor((low + high) / 2);
-        if (isLessOrEqual(sumFn(fromLevel, fromLevel + mid), available)) {
+        if (isLessOrEqual(sumFn(fromLevel, mid), available)) {
             low = mid;
         } else {
             high = mid;
@@ -518,8 +512,25 @@ var getMaxFromCost = (fromLevel, currency, sumFn) => {
     return low;
 };
 
+var getFibCostC1Sum = (fromLevel, amount) => {
+    if (amount <= 0) return BigNumber.ZERO;
+    return Fibonacci(fromLevel + amount + 1) - Fibonacci(fromLevel + 1);
+};
+
+var getFibCostC1Max = (fromLevel, currency) => getMaxFromCost(fromLevel, currency, getFibCostC1Sum);
+
+var getFibCostF1Sum = (fromLevel, amount) => {
+    if (amount <= 0) return BigNumber.ZERO;
+    return Fibonacci(fromLevel + amount + 2) - Fibonacci(fromLevel + 2);
+};
+
+var getFibCostF1Max = (fromLevel, currency) => getMaxFromCost(fromLevel, currency, getFibCostF1Sum);
+
 var getLucasCost = (level) => getLucasNumberCached(level);
-var getLucasCostSum = (fromLevel, toLevel) => getLucasSum(fromLevel, toLevel);
+var getLucasCostSum = (fromLevel, amount) => {
+    if (amount <= 0) return BigNumber.ZERO;
+    return getLucasNumberCached(fromLevel + amount + 1) - getLucasNumberCached(fromLevel + 1);
+};
 var getLucasCostMax = (fromLevel, currency) => getMaxFromCost(fromLevel, currency, getLucasCostSum);
 
 // Closed-form Fibonacci and Lucas numbers using phi.
