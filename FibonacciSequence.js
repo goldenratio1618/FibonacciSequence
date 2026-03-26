@@ -20,7 +20,7 @@ const INV_SQRT5_VALUE = 1 / SQRT5_VALUE;
 const phi = BigNumber.from(PHI_VALUE);
 const sqrt5 = BigNumber.from(SQRT5_VALUE);
 
-const milestoneRhoPowers = [10, 25, 50, 100, 150, 200, 250, 300, 400, 600];
+const milestoneRhoPowers = [8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
 
 var currency, currencyF, currencyL;
 
@@ -32,8 +32,8 @@ var f1, f2;
 var l1, l2;
 var m;
 
-var c3Unlock, f1Unlock, f2Unlock, c2Base16Unlock, c2BasePhiUnlock;
-var lucasUnlock, l1Unlock, l2Unlock, c4Unlock, tribonacciUnlock;
+var c3Unlock, f1Unlock, f2Unlock, c2Base117Unlock, c2Base16Unlock, c2BasePhiUnlock;
+var lucasUnlock, l1Unlock, l2Unlock, tribonacciUnlock;
 
 var tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
 var fibCostCache = [BigNumber.ZERO, BigNumber.ONE];
@@ -78,7 +78,7 @@ var init = () => {
     {
         let getDesc = (level) => "c_3=2^{" + level + "}";
         let getInfo = (level) => "c_3=" + getC3(level).toString(0);
-        c3 = theory.createUpgrade(3, currencyF, new ExponentialCost(987, Math.log2(987)));
+        c3 = theory.createUpgrade(3, currencyF, new ExponentialCost(987, Math.log2(610)));
         c3.getDescription = (_) => Utils.getMath(getDesc(c3.level));
         c3.getInfo = (amount) => Utils.getMathTo(getInfo(c3.level), getInfo(c3.level + amount));
         c3.isAvailable = false;
@@ -96,9 +96,9 @@ var init = () => {
 
     // f2
     {
-        let getDesc = (level) => "f_2=3^{" + level + "}";
+        let getDesc = (level) => "f_2=5^{" + level + "}";
         let getInfo = (level) => "f_2=" + getF2(level).toString(0);
-        f2 = theory.createUpgrade(5, currencyF, new ExponentialCost(1597, Math.log2(1597)));
+        f2 = theory.createUpgrade(5, currencyF, new ExponentialCost(2584, Math.log2(14930352)));
         f2.getDescription = (_) => Utils.getMath(getDesc(f2.level));
         f2.getInfo = (amount) => Utils.getMathTo(getInfo(f2.level), getInfo(f2.level + amount));
         f2.isAvailable = false;
@@ -108,7 +108,7 @@ var init = () => {
     {
         let getDesc = (level) => "m=" + BigNumber.from(getM(level)).toString(0);
         let getInfo = (level) => "m=" + BigNumber.from(getM(level)).toString(0);
-        m = theory.createUpgrade(6, currency, new CustomCost(getLucasCost, getLucasCostSum, getLucasCostMax));
+        m = theory.createUpgrade(6, currency, new ExponentialCost(2, Math.log2(5)));
         m.getDescription = (_) => Utils.getMath(getDesc(m.level));
         m.getInfo = (amount) => Utils.getMathTo(getInfo(m.level), getInfo(m.level + amount));
         m.isAvailable = false;
@@ -118,7 +118,7 @@ var init = () => {
     {
         let getDesc = (level) => "l_1=" + getL1(level).toString(0);
         let getInfo = (level) => "l_1=" + getL1(level).toString(0);
-        l1 = theory.createUpgrade(7, currencyF, new CustomCost(getLucasCost, getLucasCostSum, getLucasCostMax));
+        l1 = theory.createUpgrade(7, currencyL, new CustomCost(getLucasCost, getLucasCostSum, getLucasCostMax));
         l1.getDescription = (_) => Utils.getMath(getDesc(l1.level));
         l1.getInfo = (amount) => Utils.getMathTo(getInfo(l1.level), getInfo(l1.level + amount));
         l1.isAvailable = false;
@@ -126,9 +126,9 @@ var init = () => {
 
     // l2
     {
-        let getDesc = (level) => "l_2=5^{" + level + "}";
+        let getDesc = (level) => "l_2=4^{" + level + "}";
         let getInfo = (level) => "l_2=" + getL2(level).toString(0);
-        l2 = theory.createUpgrade(8, currencyF, new ExponentialCost(1, Math.log2(2584)));
+        l2 = theory.createUpgrade(8, currencyL, new ExponentialCost(1, Math.log2(87403803)));
         l2.getDescription = (_) => Utils.getMath(getDesc(l2.level));
         l2.getInfo = (amount) => Utils.getMathTo(getInfo(l2.level), getInfo(l2.level + amount));
         l2.isAvailable = false;
@@ -136,9 +136,9 @@ var init = () => {
 
     // c4
     {
-        let getDesc = (level) => "c_4=\\varphi^{" + level + "}";
+        let getDesc = (level) => "c_4=3^{" + level + "}";
         let getInfo = (level) => "c_4=" + getC4(level).toString(2);
-        c4 = theory.createUpgrade(9, currencyL, new ExponentialCost(1, Math.log2(4181)));
+        c4 = theory.createUpgrade(9, currencyL, new ExponentialCost(1, Math.log2(987)));
         c4.getDescription = (_) => Utils.getMath(getDesc(c4.level));
         c4.getInfo = (amount) => Utils.getMathTo(getInfo(c4.level), getInfo(c4.level + amount));
         c4.isAvailable = false;
@@ -181,7 +181,7 @@ var init = () => {
         c2Base16Unlock = theory.createMilestoneUpgrade(3, 1);
         c2Base16Unlock.description = "Set $c_2$ base to 1.6";
         c2Base16Unlock.info = "$c_2=1.6^x$";
-        c2Base16Unlock.boughtOrRefunded = (_) => { invalidateEquations(); };
+        c2Base16Unlock.boughtOrRefunded = (_) => { invalidateEquations(); updateAvailability(); };
         c2Base16Unlock.isAvailable = false;
     }
 
@@ -189,7 +189,7 @@ var init = () => {
         c2BasePhiUnlock = theory.createMilestoneUpgrade(4, 1);
         c2BasePhiUnlock.description = "Set $c_2$ base to $\\varphi$";
         c2BasePhiUnlock.info = "$c_2=\\varphi^x$";
-        c2BasePhiUnlock.boughtOrRefunded = (_) => { invalidateEquations(); };
+        c2BasePhiUnlock.boughtOrRefunded = (_) => { invalidateEquations(); updateAvailability(); };
         c2BasePhiUnlock.isAvailable = false;
     }
 
@@ -204,7 +204,7 @@ var init = () => {
     {
         l1Unlock = theory.createMilestoneUpgrade(6, 1);
         l1Unlock.description = "Unlock $l_1$";
-        l1Unlock.info = "$\\dot{F}=f_1f_2l_1F_n$";
+        l1Unlock.info = "$\\dot{L}=l_1L_m$";
         l1Unlock.boughtOrRefunded = (_) => { invalidateEquations(); updateAvailability(); };
         l1Unlock.isAvailable = false;
     }
@@ -212,23 +212,23 @@ var init = () => {
     {
         l2Unlock = theory.createMilestoneUpgrade(7, 1);
         l2Unlock.description = "Unlock $l_2$";
-        l2Unlock.info = "$\\dot{F}=f_1f_2l_1l_2F_n$";
+        l2Unlock.info = "$\\dot{L}=l_1l_2L_m$";
         l2Unlock.boughtOrRefunded = (_) => { invalidateEquations(); updateAvailability(); };
         l2Unlock.isAvailable = false;
     }
 
     {
-        c4Unlock = theory.createMilestoneUpgrade(8, 1);
-        c4Unlock.description = "Unlock $c_4$";
-        c4Unlock.info = "Adds $c_4$ to $\\dot{\\rho}$";
-        c4Unlock.boughtOrRefunded = (_) => { invalidateEquations(); updateAvailability(); };
-        c4Unlock.isAvailable = false;
+        c2Base117Unlock = theory.createMilestoneUpgrade(8, 1);
+        c2Base117Unlock.description = "Set $c_2$ base to 11/7";
+        c2Base117Unlock.info = "$c_2=\\frac{11}{7}^x$";
+        c2Base117Unlock.boughtOrRefunded = (_) => { invalidateEquations(); updateAvailability(); };
+        c2Base117Unlock.isAvailable = false;
     }
 
     {
         tribonacciUnlock = theory.createMilestoneUpgrade(9, 1);
         tribonacciUnlock.description = "Unlock Tribonacci term";
-        tribonacciUnlock.info = "Add $T_{\\lfloor t^{0.1}\\rfloor}$";
+        tribonacciUnlock.info = "Multiply by $T_{\\lfloor t^{0.2}\\rfloor}$";
         tribonacciUnlock.boughtOrRefunded = (_) => { invalidateEquations(); };
         tribonacciUnlock.isAvailable = false;
     }
@@ -288,7 +288,7 @@ var init = () => {
     story9 += "The rho equation feels crowded but incomplete.\n";
     story9 += "A fourth companion steps in from the Lucas lantern.\n";
     story9 += "You welcome c_4, and the march keeps time.\n";
-    theory.createStoryChapter(8, "Fourth Companion", story9, () => c4Unlock.level > 0);
+    theory.createStoryChapter(8, "Fourth Companion", story9, () => lucasUnlock.level > 0);
 
     let story10 = "";
     story10 += "A dream arrives in three-beat steps, not two.\n";
@@ -306,15 +306,15 @@ var invalidateEquations = () => {
 };
 
 var updateAvailability = () => {
-    f1Unlock.isAvailable = c3Unlock.level > 0;
+    lucasUnlock.isAvailable = c3Unlock.level > 0;
+    f1Unlock.isAvailable = lucasUnlock.level > 0;
     f2Unlock.isAvailable = f1Unlock.level > 0;
-    c2Base16Unlock.isAvailable = f2Unlock.level > 0;
-    c2BasePhiUnlock.isAvailable = c2Base16Unlock.level > 0;
-    lucasUnlock.isAvailable = c2BasePhiUnlock.level > 0;
-    l1Unlock.isAvailable = lucasUnlock.level > 0;
+    l1Unlock.isAvailable = f2Unlock.level > 0;
     l2Unlock.isAvailable = l1Unlock.level > 0;
-    c4Unlock.isAvailable = l2Unlock.level > 0;
-    tribonacciUnlock.isAvailable = c4Unlock.level > 0;
+    c2Base117Unlock.isAvailable = l2Unlock.level > 0;
+    c2Base16Unlock.isAvailable = c2Base117Unlock.level > 0;
+    c2BasePhiUnlock.isAvailable = c2Base16Unlock.level > 0;
+    tribonacciUnlock.isAvailable = c2BasePhiUnlock.level > 0;
 
     c3.isAvailable = c3Unlock.level > 0;
     f1.isAvailable = f1Unlock.level > 0;
@@ -322,26 +322,27 @@ var updateAvailability = () => {
     m.isAvailable = lucasUnlock.level > 0;
     l1.isAvailable = l1Unlock.level > 0;
     l2.isAvailable = l2Unlock.level > 0;
-    c4.isAvailable = c4Unlock.level > 0;
+    c4.isAvailable = lucasUnlock.level > 0;
 };
 
 var tick = (elapsedTime, multiplier) => {
     let dt = BigNumber.from(elapsedTime * multiplier);
     let bonus = theory.publicationMultiplier;
 
-    t += dt;
+    if (c1.level > 0)
+        t += dt;
 
-    let tFactor = t.max(BigNumber.ONE).pow(-0.5);
+    let tFactor = t.max(BigNumber.ONE).pow(-0.3);
     let rhoTerm = getC1(c1.level) * getC2(c2.level) * tFactor;
 
     if (c3Unlock.level > 0)
         rhoTerm *= getC3(c3.level);
 
-    if (c4Unlock.level > 0)
+    if (lucasUnlock.level > 0)
         rhoTerm *= getC4(c4.level);
 
     if (tribonacciUnlock.level > 0)
-        rhoTerm += getTribonacciNumber(getTribonacciIndex());
+        rhoTerm *= getTribonacciNumber(getTribonacciIndex());
 
     currency.value += dt * bonus * rhoTerm;
 
@@ -354,17 +355,16 @@ var tick = (elapsedTime, multiplier) => {
     if (f2Unlock.level > 0)
         fMultiplier *= getF2(f2.level);
 
-    if (l1Unlock.level > 0)
-        fMultiplier *= getL1(l1.level);
-
-    if (l2Unlock.level > 0)
-        fMultiplier *= getL2(l2.level);
-
     currencyF.value += dt * bonus * fMultiplier * fn;
 
     if (lucasUnlock.level > 0) {
         let lm = getLucasNumber(getM(m.level));
-        currencyL.value += dt * bonus * lm;
+        let lMultiplier = BigNumber.ONE;
+        if (l1Unlock.level > 0)
+            lMultiplier *= getL1(l1.level);
+        if (l2Unlock.level > 0)
+            lMultiplier *= getL2(l2.level);
+        currencyL.value += dt * bonus * lMultiplier * lm;
     }
 
     theory.invalidateSecondaryEquation();
@@ -376,13 +376,13 @@ var getPrimaryEquation = () => {
     if (c3Unlock.level > 0)
         result += "c_3";
 
-    if (c4Unlock.level > 0)
+    if (lucasUnlock.level > 0)
         result += "c_4";
 
-    result += "t^{-0.5}";
+    result += "t^{-0.3}";
 
     if (tribonacciUnlock.level > 0)
-        result += "+T_{\\lfloor t^{0.1}\\rfloor}";
+        result += "T_{\\lfloor t^{0.2}\\rfloor}";
 
     return result;
 };
@@ -395,19 +395,20 @@ var getSecondaryEquation = () => {
 
     if (f1Unlock.level > 0) multiplier += "f_1";
     if (f2Unlock.level > 0) multiplier += "f_2";
-    if (l1Unlock.level > 0) multiplier += "l_1";
-    if (l2Unlock.level > 0) multiplier += "l_2";
 
     let result = "\\begin{matrix}";
     result += "\\dot{F}=" + multiplier + "F_n";
     result += "\\\\";
-    result += "\\dot{t}=1";
+    result += "\\dot{t}=" + (c1.level > 0 ? "1" : "0");
     result += "\\\\";
     result += "t=" + t.toString(2);
 
     if (lucasUnlock.level > 0) {
         result += "\\\\";
-        result += "\\dot{L}=L_m";
+        let lMultiplier = "";
+        if (l1Unlock.level > 0) lMultiplier += "l_1";
+        if (l2Unlock.level > 0) lMultiplier += "l_2";
+        result += "\\dot{L}=" + lMultiplier + "L_m";
     }
 
     result += "\\end{matrix}";
@@ -416,8 +417,8 @@ var getSecondaryEquation = () => {
 
 var getTertiaryEquation = () => "";
 
-var getPublicationMultiplier = (tau) => BigNumber.from(5) * tau.pow(BigNumber.from(INV_SQRT5_VALUE));
-var getPublicationMultiplierFormula = (symbol) => "5" + symbol + "^{1/\\sqrt{5}}";
+var getPublicationMultiplier = (tau) => tau.pow(BigNumber.from(INV_SQRT5_VALUE));
+var getPublicationMultiplierFormula = (symbol) => symbol + "^{1/\\sqrt{5}}";
 var getTau = () => currency.value.pow(BigNumber.from(INV_PHI_VALUE));
 var getCurrencyFromTau = (tau) => [tau.max(BigNumber.ONE).pow(BigNumber.from(PHI_VALUE)), currency.symbol];
 var get2DGraphValue = () => currency.value.sign * (BigNumber.ONE + currency.value.abs()).log10().toNumber();
@@ -437,23 +438,25 @@ var getC1 = (level) => Utils.getStepwisePowerSum(level, 8, 13, 0);
 var getC2BaseDisplay = () => {
     if (c2BasePhiUnlock && c2BasePhiUnlock.level > 0) return "\\varphi";
     if (c2Base16Unlock && c2Base16Unlock.level > 0) return "1.6";
+    if (c2Base117Unlock && c2Base117Unlock.level > 0) return "11/7";
     return "1.5";
 };
 
 var getC2Base = () => {
     if (c2BasePhiUnlock && c2BasePhiUnlock.level > 0) return phi;
     if (c2Base16Unlock && c2Base16Unlock.level > 0) return BigNumber.from(1.6);
+    if (c2Base117Unlock && c2Base117Unlock.level > 0) return BigNumber.from(11 / 7);
     return BigNumber.from(1.5);
 };
 
 var getC2 = (level) => getC2Base().pow(level);
 var getC3 = (level) => BigNumber.TWO.pow(level);
-var getC4 = (level) => phi.pow(level);
+var getC4 = (level) => BigNumber.THREE.pow(level);
 
-var getF1 = (level) => Utils.getStepwisePowerSum(level, 34, 55, 1);
-var getF2 = (level) => BigNumber.THREE.pow(level);
-var getL1 = (level) => Utils.getStepwisePowerSum(level, 89, 144, 1);
-var getL2 = (level) => BigNumber.FIVE.pow(level);
+var getF1 = (level) => Utils.getStepwisePowerSum(level, 21, 34, 1);
+var getF2 = (level) => BigNumber.FIVE.pow(level);
+var getL1 = (level) => Utils.getStepwisePowerSum(level, 29, 47, 1);
+var getL2 = (level) => BigNumber.FOUR.pow(level);
 
 var getN = (level) => level;
 var getM = (level) => level;
@@ -549,8 +552,8 @@ var getLucasNumber = (n) => {
 };
 
 var getTribonacciIndex = () => {
-    let raw = t.max(BigNumber.ONE).pow(0.1).toNumber();
-    if (!isFinite(raw) || raw < 0) return 0;
+    let raw = t.max(BigNumber.ONE).pow(0.2).toNumber();
+    if (!isFinite(raw) || raw < 2) return 2;
     return Math.floor(raw);
 };
 
