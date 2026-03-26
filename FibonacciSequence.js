@@ -10,7 +10,7 @@ var description =
     "Grow rho with stepwise multipliers, cultivate F with recurrence, and " +
     "eventually uncover the Lucas and Tribonacci echoes hidden in the sequence.";
 var authors = "aaatanas";
-var version = 6;
+var version = 7;
 
 const PHI_VALUE = (1 + Math.sqrt(5)) / 2;
 const INV_PHI_VALUE = 1 / PHI_VALUE;
@@ -38,7 +38,7 @@ var tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
 var fibCostCache = [BigNumber.ZERO, BigNumber.ONE];
 var lucasCostCache = [BigNumber.from(2), BigNumber.ONE];
 var quaternaryEntries = [];
-var equationPage = 0;
+var equationPage = 1;
 
 var isLucasCurrencyUnlocked = () => lucasUnlock && lucasUnlock.level > 0;
 var isL1Unlocked = () => lUnlock && lUnlock.level > 0;
@@ -316,23 +316,22 @@ var invalidateEquations = () => {
     theory.invalidateTertiaryEquation();
 };
 
-var getDefinitionEquation = () => "\\begin{matrix}" +
-    "F_0=0,\\quad F_1=1,\\quad F_n=F_{n-1}+F_{n-2}\\\\" +
-    "L_0=2,\\quad L_1=1,\\quad L_n=L_{n-1}+L_{n-2}\\\\" +
-    "\\varphi=\\frac{1+\\sqrt{5}}{2}" +
-    "\\end{matrix}";
+var getDefinitionEquation = () => {
+    let result = "";
+    result += "F_0=0,\\quad F_1=1";
+    result += "\\\\";
+    result += "F_n=F_{n-1}+F_{n-2}";
+    result += "\\\\";
+    result += "L_0=2,\\quad L_1=1";
+    result += "\\\\";
+    result += "L_n=L_{n-1}+L_{n-2}";
+    result += "\\\\";
+    result += "\\varphi = \\frac{1+\\sqrt{5}}{2}";
+    return result;
+};
 
 var getDefinitionValuesEquation = () => {
-    let result = "\\begin{matrix}";
-    result += "F_n=" + getFibonacciNumber(getN(n.level)).toString(2);
-
-    if (isLucasCurrencyUnlocked()) {
-        result += "\\\\";
-        result += "L_m=" + getLucasNumber(getM(m.level)).toString(2);
-    }
-
-    result += "\\end{matrix}";
-    return result;
+    return "";
 };
 
 var updateAvailability = () => {
@@ -430,9 +429,9 @@ var tick = (elapsedTime, multiplier) => {
 };
 
 var getPrimaryEquation = () => {
-    if (equationPage == 1) {
-        theory.primaryEquationHeight = 70;
-        theory.primaryEquationScale = 0.95;
+    if (equationPage == 0) {
+        theory.primaryEquationHeight = 130;
+        theory.primaryEquationScale = 0.72;
         return getDefinitionEquation();
     }
 
@@ -455,9 +454,9 @@ var getPrimaryEquation = () => {
 };
 
 var getSecondaryEquation = () => {
-    if (equationPage == 1) {
-        theory.secondaryEquationHeight = isLucasCurrencyUnlocked() ? 40 : 28;
-        theory.secondaryEquationScale = 0.95;
+    if (equationPage == 0) {
+        theory.secondaryEquationHeight = 12;
+        theory.secondaryEquationScale = 1;
         return getDefinitionValuesEquation();
     }
 
@@ -506,11 +505,17 @@ var getQuaternaryEntries = () => {
     }
 
     let tribonacciIndex = getTribonacciIndex();
+    quaternaryEntries[1].name = equationPage == 0 ? "F_n" : "\\dot{F}";
+    quaternaryEntries[2].name = equationPage == 0 ? "L_m" : "\\dot{L}";
     quaternaryEntries[0].value = getRhoDot().toString(2);
-    quaternaryEntries[1].value = getFDot().toString(2);
+    quaternaryEntries[1].value = equationPage == 0
+        ? getFibonacciNumber(getN(n.level)).toString(2)
+        : getFDot().toString(2);
 
     let lDot = getLDot();
-    quaternaryEntries[2].value = lDot ? lDot.toString(2) : null;
+    quaternaryEntries[2].value = equationPage == 0
+        ? (isLucasCurrencyUnlocked() ? getLucasNumber(getM(m.level)).toString(2) : null)
+        : (lDot ? lDot.toString(2) : null);
     quaternaryEntries[3].value = tribonacciUnlock.level > 0 ? tribonacciIndex.toString() : null;
     quaternaryEntries[4].value = tribonacciUnlock.level > 0 ? getTribonacciNumber(tribonacciIndex).toString(2) : null;
 
@@ -679,7 +684,7 @@ var setInternalState = (state) => {
     let values = state.split(" ");
     if (values.length > 0 && values[0].length > 0)
         t = parseBigNumber(values[0]);
-    equationPage = values.length > 1 ? Math.max(0, Math.min(1, parseInt(values[1]) || 0)) : 0;
+    equationPage = values.length > 1 ? Math.max(0, Math.min(1, parseInt(values[1]) || 1)) : 1;
     invalidateEquations();
     theory.invalidateQuaternaryValues();
 };
@@ -695,7 +700,7 @@ var resetStage = () => {
     currencyF.value = BigNumber.ZERO;
     currencyL.value = BigNumber.ZERO;
     t = BigNumber.ONE;
-    equationPage = 0;
+    equationPage = 1;
     tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
     theory.clearGraph();
     updateAvailability();
@@ -705,7 +710,7 @@ var resetStage = () => {
 
 var postPublish = () => {
     t = BigNumber.ONE;
-    equationPage = 0;
+    equationPage = 1;
     tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
     invalidateEquations();
     theory.invalidateQuaternaryValues();
