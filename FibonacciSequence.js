@@ -15,7 +15,7 @@ var description =
     "Grow rho with stepwise multipliers, cultivate F with recurrence, and " +
     "eventually uncover the Lucas and Tribonacci echoes hidden in the sequence.";
 var authors = "aaatanas";
-var version = 3;
+var version = 5;
 
 const PHI_VALUE = (1 + Math.sqrt(5)) / 2;
 const INV_PHI_VALUE = 1 / PHI_VALUE;
@@ -37,19 +37,18 @@ var f1, f2;
 var l1, l2;
 var m;
 
-var c3Unlock, lucasUnlock, fUnlock, c2BaseUnlock, tribonacciUnlock;
+var c3Unlock, lucasUnlock, fUnlock, lUnlock, c2BaseUnlock, tribonacciUnlock;
 
 var tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
 var fibCostCache = [BigNumber.ZERO, BigNumber.ONE];
 var lucasCostCache = [BigNumber.from(2), BigNumber.ONE];
 var quaternaryEntries = [];
 var equationOverlay;
-var equationDefinitionsFrame;
-var equationDefinitionsVisible = false;
+var equationDefinitionsPopup;
 
 var isLucasCurrencyUnlocked = () => lucasUnlock && lucasUnlock.level > 0;
-var isL1Unlocked = () => lucasUnlock && lucasUnlock.level > 1;
-var isL2Unlocked = () => lucasUnlock && lucasUnlock.level > 2;
+var isL1Unlocked = () => lUnlock && lUnlock.level > 0;
+var isL2Unlocked = () => lUnlock && lUnlock.level > 1;
 var isF1Unlocked = () => fUnlock && fUnlock.level > 0;
 var isF2Unlocked = () => fUnlock && fUnlock.level > 1;
 var isC2Base117Unlocked = () => c2BaseUnlock && c2BaseUnlock.level > 0;
@@ -182,17 +181,9 @@ var init = () => {
     }
 
     {
-        lucasUnlock = theory.createMilestoneUpgrade(1, 3);
-        lucasUnlock.getDescription = (_) => getGroupedMilestoneDescription(lucasUnlock.level, [
-            "Unlock Lucas currency",
-            "Unlock $l_1$",
-            "Unlock $l_2$"
-        ]);
-        lucasUnlock.getInfo = (amount) => getGroupedMilestoneInfo(lucasUnlock.level + amount - 1, [
-            "$\\dot{L}=L_m$",
-            "$\\dot{L}=l_1L_m$",
-            "$\\dot{L}=l_1l_2L_m$"
-        ]);
+        lucasUnlock = theory.createMilestoneUpgrade(1, 1);
+        lucasUnlock.description = "Unlock Lucas currency";
+        lucasUnlock.info = "$\\dot{L}=L_m$";
         lucasUnlock.boughtOrRefunded = (_) => { invalidateEquations(); updateAvailability(); };
         lucasUnlock.isAvailable = false;
     }
@@ -212,7 +203,21 @@ var init = () => {
     }
 
     {
-        c2BaseUnlock = theory.createMilestoneUpgrade(3, 3);
+        lUnlock = theory.createMilestoneUpgrade(3, 2);
+        lUnlock.getDescription = (_) => getGroupedMilestoneDescription(lUnlock.level, [
+            "Unlock $l_1$",
+            "Unlock $l_2$"
+        ]);
+        lUnlock.getInfo = (amount) => getGroupedMilestoneInfo(lUnlock.level + amount - 1, [
+            "$\\dot{L}=l_1L_m$",
+            "$\\dot{L}=l_1l_2L_m$"
+        ]);
+        lUnlock.boughtOrRefunded = (_) => { invalidateEquations(); updateAvailability(); };
+        lUnlock.isAvailable = false;
+    }
+
+    {
+        c2BaseUnlock = theory.createMilestoneUpgrade(4, 3);
         c2BaseUnlock.getDescription = (_) => getGroupedMilestoneDescription(c2BaseUnlock.level, [
             "Set $c_2$ base to 11/7",
             "Set $c_2$ base to 1.6",
@@ -228,7 +233,7 @@ var init = () => {
     }
 
     {
-        tribonacciUnlock = theory.createMilestoneUpgrade(4, 1);
+        tribonacciUnlock = theory.createMilestoneUpgrade(5, 1);
         tribonacciUnlock.description = "Unlock Tribonacci term";
         tribonacciUnlock.info = "Multiply by $T_{\\lfloor t^{0.2}\\rfloor}$";
         tribonacciUnlock.boughtOrRefunded = (_) => { invalidateEquations(); updateAvailability(); };
@@ -317,26 +322,89 @@ var invalidateEquations = () => {
     theory.invalidateTertiaryEquation();
 };
 
-var getEquationDefinitions = () => "\\begin{matrix}" +
-    "F_0=0,\\quad F_1=1,\\quad F_n=F_{n-1}+F_{n-2}\\\\" +
-    "L_0=2,\\quad L_1=1,\\quad L_n=L_{n-1}+L_{n-2}\\\\" +
-    "\\varphi=\\frac{1+\\sqrt{5}}{2}" +
-    "\\end{matrix}";
+var getEquationDefinitionsPopup = () => {
+    if (!equationDefinitionsPopup) {
+        equationDefinitionsPopup = ui.createPopup({
+            title: "Sequence Definitions",
+            closeOnBackgroundClicked: true,
+            closeOnBackButtonClicked: true,
+            content: ui.createScrollView({
+                content: ui.createStackLayout({
+                    padding: new Thickness(16, 12),
+                    spacing: 10,
+                    children: [
+                        ui.createLabel({
+                            text: "Definitions used by Fibonacci Sequence.",
+                            textColor: Color.TEXT_MEDIUM,
+                            horizontalTextAlignment: TextAlignment.CENTER,
+                            horizontalOptions: LayoutOptions.FILL
+                        }),
+                        ui.createFrame({
+                            hasShadow: false,
+                            cornerRadius: 8,
+                            padding: new Thickness(12, 10),
+                            backgroundColor: Color.MEDIUM_BACKGROUND,
+                            borderColor: Color.BORDER,
+                            content: ui.createLatexLabel({
+                                text: "F_0=0,\\quad F_1=1,\\quad F_n=F_{n-1}+F_{n-2}",
+                                textColor: Color.TEXT,
+                                horizontalTextAlignment: TextAlignment.CENTER,
+                                verticalTextAlignment: TextAlignment.CENTER
+                            })
+                        }),
+                        ui.createFrame({
+                            hasShadow: false,
+                            cornerRadius: 8,
+                            padding: new Thickness(12, 10),
+                            backgroundColor: Color.MEDIUM_BACKGROUND,
+                            borderColor: Color.BORDER,
+                            content: ui.createLatexLabel({
+                                text: "L_0=2,\\quad L_1=1,\\quad L_n=L_{n-1}+L_{n-2}",
+                                textColor: Color.TEXT,
+                                horizontalTextAlignment: TextAlignment.CENTER,
+                                verticalTextAlignment: TextAlignment.CENTER
+                            })
+                        }),
+                        ui.createFrame({
+                            hasShadow: false,
+                            cornerRadius: 8,
+                            padding: new Thickness(12, 10),
+                            backgroundColor: Color.MEDIUM_BACKGROUND,
+                            borderColor: Color.BORDER,
+                            content: ui.createLatexLabel({
+                                text: "\\varphi=\\frac{1+\\sqrt{5}}{2}",
+                                textColor: Color.TEXT,
+                                horizontalTextAlignment: TextAlignment.CENTER,
+                                verticalTextAlignment: TextAlignment.CENTER
+                            })
+                        }),
+                        ui.createButton({
+                            text: "Close",
+                            margin: new Thickness(0, 4, 0, 0),
+                            horizontalOptions: LayoutOptions.CENTER,
+                            onClicked: () => equationDefinitionsPopup.hide()
+                        })
+                    ]
+                })
+            })
+        });
+    }
 
-var setEquationDefinitionsVisible = (isVisible) => {
-    equationDefinitionsVisible = isVisible;
-    if (equationDefinitionsFrame)
-        equationDefinitionsFrame.isVisible = isVisible;
+    return equationDefinitionsPopup;
 };
 
 var updateAvailability = () => {
-    let lucasMaxLevel = c3Unlock.level > 0 ? (isF2Unlocked() ? 3 : 1) : 0;
+    let lucasMaxLevel = c3Unlock.level > 0 ? 1 : 0;
     lucasUnlock.maxLevel = Math.max(lucasUnlock.level, lucasMaxLevel);
     lucasUnlock.isAvailable = c3Unlock.level > 0 || lucasUnlock.level > 0;
 
     let fMaxLevel = isLucasCurrencyUnlocked() ? 2 : 0;
     fUnlock.maxLevel = Math.max(fUnlock.level, fMaxLevel);
     fUnlock.isAvailable = isLucasCurrencyUnlocked() || fUnlock.level > 0;
+
+    let lMaxLevel = isF2Unlocked() ? 2 : 0;
+    lUnlock.maxLevel = Math.max(lUnlock.level, lMaxLevel);
+    lUnlock.isAvailable = isF2Unlocked() || lUnlock.level > 0;
 
     let c2BaseMaxLevel = isL2Unlocked() ? 3 : 0;
     c2BaseUnlock.maxLevel = Math.max(c2BaseUnlock.level, c2BaseMaxLevel);
@@ -431,42 +499,18 @@ var getPrimaryEquation = () => {
     result += "t^{-0.3}";
 
     if (tribonacciUnlock.level > 0)
-        result += "T_{\\lfloor t^{0.2}\\rfloor}";
+        result += "T_x";
 
     return result;
 };
 
 var getEquationOverlay = () => {
     if (!equationOverlay) {
-        equationDefinitionsFrame = ui.createFrame({
-            isVisible: equationDefinitionsVisible,
-            inputTransparent: true,
-            cascadeInputTransparent: true,
-            hasShadow: false,
-            cornerRadius: 8,
-            margin: new Thickness(8, 4),
-            padding: new Thickness(10, 6),
-            backgroundColor: Color.fromRgba(0.08, 0.08, 0.08, 0.94),
-            borderColor: Color.BORDER,
-            horizontalOptions: LayoutOptions.FILL,
-            verticalOptions: LayoutOptions.CENTER,
-            content: ui.createLatexLabel({
-                inputTransparent: true,
-                text: getEquationDefinitions(),
-                fontSize: 12,
-                textColor: Color.TEXT,
-                horizontalTextAlignment: TextAlignment.CENTER,
-                verticalTextAlignment: TextAlignment.CENTER,
-                padding: new Thickness(0)
-            })
-        });
-
         equationOverlay = ui.createGrid({
             backgroundColor: Color.fromRgba(0, 0, 0, 0.001),
-            children: [equationDefinitionsFrame],
             onTouched: (touch) => {
                 if (!touch.type.isReleased()) return;
-                setEquationDefinitionsVisible(!equationDefinitionsVisible);
+                getEquationDefinitionsPopup().show();
             }
         });
     }
@@ -494,6 +538,11 @@ var getSecondaryEquation = () => {
         result += "\\dot{L}=" + lMultiplier + "L_m";
     }
 
+    if (tribonacciUnlock.level > 0) {
+        result += "\\\\";
+        result += "x=\\lfloor t^{0.2}\\rfloor";
+    }
+
     result += "\\\\";
     result += "\\dot{t}=" + (c1.level > 0 ? "1" : "0");
     result += "\\\\";
@@ -510,15 +559,18 @@ var getQuaternaryEntries = () => {
         quaternaryEntries.push(new QuaternaryEntry("\\dot{\\rho}", null));
         quaternaryEntries.push(new QuaternaryEntry("\\dot{F}", null));
         quaternaryEntries.push(new QuaternaryEntry("\\dot{L}", null));
-        quaternaryEntries.push(new QuaternaryEntry("T_{\\lfloor t^{0.2}\\rfloor}", null));
+        quaternaryEntries.push(new QuaternaryEntry("x", null));
+        quaternaryEntries.push(new QuaternaryEntry("T_x", null));
     }
 
+    let tribonacciIndex = getTribonacciIndex();
     quaternaryEntries[0].value = getRhoDot().toString(2);
     quaternaryEntries[1].value = getFDot().toString(2);
 
     let lDot = getLDot();
     quaternaryEntries[2].value = lDot ? lDot.toString(2) : null;
-    quaternaryEntries[3].value = tribonacciUnlock.level > 0 ? getTribonacciNumber(getTribonacciIndex()).toString(2) : null;
+    quaternaryEntries[3].value = tribonacciUnlock.level > 0 ? tribonacciIndex.toString() : null;
+    quaternaryEntries[4].value = tribonacciUnlock.level > 0 ? getTribonacciNumber(tribonacciIndex).toString(2) : null;
 
     return quaternaryEntries;
 };
@@ -701,7 +753,8 @@ var resetStage = () => {
     currencyL.value = BigNumber.ZERO;
     t = BigNumber.ONE;
     tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
-    setEquationDefinitionsVisible(false);
+    if (equationDefinitionsPopup)
+        equationDefinitionsPopup.hide();
     theory.clearGraph();
     updateAvailability();
     invalidateEquations();
@@ -711,7 +764,8 @@ var resetStage = () => {
 var postPublish = () => {
     t = BigNumber.ONE;
     tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
-    setEquationDefinitionsVisible(false);
+    if (equationDefinitionsPopup)
+        equationDefinitionsPopup.hide();
     theory.invalidateQuaternaryValues();
 };
 
