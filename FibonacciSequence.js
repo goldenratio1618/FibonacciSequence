@@ -2,11 +2,6 @@ import { CustomCost, ExponentialCost } from "./api/Costs";
 import { BigNumber, parseBigNumber } from "./api/BigNumber";
 import { QuaternaryEntry, theory } from "./api/Theory";
 import { Utils } from "./api/Utils";
-import { ui } from "./api/ui/UI";
-import { Color } from "./api/ui/properties/Color";
-import { LayoutOptions } from "./api/ui/properties/LayoutOptions";
-import { TextAlignment } from "./api/ui/properties/TextAlignment";
-import { Thickness } from "./api/ui/properties/Thickness";
 
 var id = "fibonacci_sequence";
 var name = "Fibonacci Sequence";
@@ -15,7 +10,7 @@ var description =
     "Grow rho with stepwise multipliers, cultivate F with recurrence, and " +
     "eventually uncover the Lucas and Tribonacci echoes hidden in the sequence.";
 var authors = "aaatanas";
-var version = 5;
+var version = 6;
 
 const PHI_VALUE = (1 + Math.sqrt(5)) / 2;
 const INV_PHI_VALUE = 1 / PHI_VALUE;
@@ -43,8 +38,7 @@ var tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
 var fibCostCache = [BigNumber.ZERO, BigNumber.ONE];
 var lucasCostCache = [BigNumber.from(2), BigNumber.ONE];
 var quaternaryEntries = [];
-var equationOverlay;
-var equationDefinitionsPopup;
+var equationPage = 0;
 
 var isLucasCurrencyUnlocked = () => lucasUnlock && lucasUnlock.level > 0;
 var isL1Unlocked = () => lUnlock && lUnlock.level > 0;
@@ -322,75 +316,23 @@ var invalidateEquations = () => {
     theory.invalidateTertiaryEquation();
 };
 
-var getEquationDefinitionsPopup = () => {
-    if (!equationDefinitionsPopup) {
-        equationDefinitionsPopup = ui.createPopup({
-            title: "Sequence Definitions",
-            closeOnBackgroundClicked: true,
-            closeOnBackButtonClicked: true,
-            content: ui.createScrollView({
-                content: ui.createStackLayout({
-                    padding: new Thickness(16, 12),
-                    spacing: 10,
-                    children: [
-                        ui.createLabel({
-                            text: "Definitions used by Fibonacci Sequence.",
-                            textColor: Color.TEXT_MEDIUM,
-                            horizontalTextAlignment: TextAlignment.CENTER,
-                            horizontalOptions: LayoutOptions.FILL
-                        }),
-                        ui.createFrame({
-                            hasShadow: false,
-                            cornerRadius: 8,
-                            padding: new Thickness(12, 10),
-                            backgroundColor: Color.MEDIUM_BACKGROUND,
-                            borderColor: Color.BORDER,
-                            content: ui.createLatexLabel({
-                                text: "F_0=0,\\quad F_1=1,\\quad F_n=F_{n-1}+F_{n-2}",
-                                textColor: Color.TEXT,
-                                horizontalTextAlignment: TextAlignment.CENTER,
-                                verticalTextAlignment: TextAlignment.CENTER
-                            })
-                        }),
-                        ui.createFrame({
-                            hasShadow: false,
-                            cornerRadius: 8,
-                            padding: new Thickness(12, 10),
-                            backgroundColor: Color.MEDIUM_BACKGROUND,
-                            borderColor: Color.BORDER,
-                            content: ui.createLatexLabel({
-                                text: "L_0=2,\\quad L_1=1,\\quad L_n=L_{n-1}+L_{n-2}",
-                                textColor: Color.TEXT,
-                                horizontalTextAlignment: TextAlignment.CENTER,
-                                verticalTextAlignment: TextAlignment.CENTER
-                            })
-                        }),
-                        ui.createFrame({
-                            hasShadow: false,
-                            cornerRadius: 8,
-                            padding: new Thickness(12, 10),
-                            backgroundColor: Color.MEDIUM_BACKGROUND,
-                            borderColor: Color.BORDER,
-                            content: ui.createLatexLabel({
-                                text: "\\varphi=\\frac{1+\\sqrt{5}}{2}",
-                                textColor: Color.TEXT,
-                                horizontalTextAlignment: TextAlignment.CENTER,
-                                verticalTextAlignment: TextAlignment.CENTER
-                            })
-                        }),
-                        ui.createButton({
-                            text: "Close",
-                            margin: new Thickness(0, 4, 0, 0),
-                            horizontalOptions: LayoutOptions.CENTER,
-                            onClicked: () => equationDefinitionsPopup.hide()
-                        })
-                    ]
-                })
-            })
-        });
+var getDefinitionEquation = () => "\\begin{matrix}" +
+    "F_0=0,\\quad F_1=1,\\quad F_n=F_{n-1}+F_{n-2}\\\\" +
+    "L_0=2,\\quad L_1=1,\\quad L_n=L_{n-1}+L_{n-2}\\\\" +
+    "\\varphi=\\frac{1+\\sqrt{5}}{2}" +
+    "\\end{matrix}";
+
+var getDefinitionValuesEquation = () => {
+    let result = "\\begin{matrix}";
+    result += "F_n=" + getFibonacciNumber(getN(n.level)).toString(2);
+
+    if (isLucasCurrencyUnlocked()) {
+        result += "\\\\";
+        result += "L_m=" + getLucasNumber(getM(m.level)).toString(2);
     }
 
-    return equationDefinitionsPopup;
+    result += "\\end{matrix}";
+    return result;
 };
 
 var updateAvailability = () => {
@@ -488,6 +430,14 @@ var tick = (elapsedTime, multiplier) => {
 };
 
 var getPrimaryEquation = () => {
+    if (equationPage == 1) {
+        theory.primaryEquationHeight = 70;
+        theory.primaryEquationScale = 0.95;
+        return getDefinitionEquation();
+    }
+
+    theory.primaryEquationHeight = 40;
+    theory.primaryEquationScale = 1;
     let result = "\\dot{\\rho}=c_1c_2";
 
     if (c3Unlock.level > 0)
@@ -504,21 +454,13 @@ var getPrimaryEquation = () => {
     return result;
 };
 
-var getEquationOverlay = () => {
-    if (!equationOverlay) {
-        equationOverlay = ui.createGrid({
-            backgroundColor: Color.fromRgba(0, 0, 0, 0.001),
-            onTouched: (touch) => {
-                if (!touch.type.isReleased()) return;
-                getEquationDefinitionsPopup().show();
-            }
-        });
+var getSecondaryEquation = () => {
+    if (equationPage == 1) {
+        theory.secondaryEquationHeight = isLucasCurrencyUnlocked() ? 40 : 28;
+        theory.secondaryEquationScale = 0.95;
+        return getDefinitionValuesEquation();
     }
 
-    return equationOverlay;
-};
-
-var getSecondaryEquation = () => {
     theory.secondaryEquationHeight = 64;
     theory.secondaryEquationScale = 1.0;
 
@@ -731,12 +673,13 @@ var getTribonacciNumber = (n) => {
     return tribonacciCache[n];
 };
 
-var getInternalState = () => `${t}`;
+var getInternalState = () => `${t} ${equationPage}`;
 
 var setInternalState = (state) => {
     let values = state.split(" ");
     if (values.length > 0 && values[0].length > 0)
         t = parseBigNumber(values[0]);
+    equationPage = values.length > 1 ? Math.max(0, Math.min(1, parseInt(values[1]) || 0)) : 0;
     invalidateEquations();
     theory.invalidateQuaternaryValues();
 };
@@ -752,9 +695,8 @@ var resetStage = () => {
     currencyF.value = BigNumber.ZERO;
     currencyL.value = BigNumber.ZERO;
     t = BigNumber.ONE;
+    equationPage = 0;
     tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
-    if (equationDefinitionsPopup)
-        equationDefinitionsPopup.hide();
     theory.clearGraph();
     updateAvailability();
     invalidateEquations();
@@ -763,10 +705,21 @@ var resetStage = () => {
 
 var postPublish = () => {
     t = BigNumber.ONE;
+    equationPage = 0;
     tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
-    if (equationDefinitionsPopup)
-        equationDefinitionsPopup.hide();
+    invalidateEquations();
     theory.invalidateQuaternaryValues();
+};
+
+var canGoToPreviousStage = () => equationPage > 0;
+var goToPreviousStage = () => {
+    equationPage -= 1;
+    invalidateEquations();
+};
+var canGoToNextStage = () => equationPage < 1;
+var goToNextStage = () => {
+    equationPage += 1;
+    invalidateEquations();
 };
 
 init();
