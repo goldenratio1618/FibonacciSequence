@@ -10,7 +10,7 @@ var description =
     "Grow rho with stepwise multipliers, cultivate F with recurrence, and " +
     "eventually uncover the Lucas and Tribonacci echoes hidden in the sequence.";
 var authors = "aaatanas";
-var version = 7;
+var version = 8;
 
 const PHI_VALUE = (1 + Math.sqrt(5)) / 2;
 const INV_PHI_VALUE = 1 / PHI_VALUE;
@@ -39,6 +39,7 @@ var fibCostCache = [BigNumber.ZERO, BigNumber.ONE];
 var lucasCostCache = [BigNumber.from(2), BigNumber.ONE];
 var quaternaryEntries = [];
 var equationPage = 1;
+var lastTickMultiplier = BigNumber.ONE;
 
 var isLucasCurrencyUnlocked = () => lucasUnlock && lucasUnlock.level > 0;
 var isL1Unlocked = () => lUnlock && lUnlock.level > 0;
@@ -48,6 +49,12 @@ var isF2Unlocked = () => fUnlock && fUnlock.level > 1;
 var isC2Base117Unlocked = () => c2BaseUnlock && c2BaseUnlock.level > 0;
 var isC2Base16Unlocked = () => c2BaseUnlock && c2BaseUnlock.level > 1;
 var isC2BasePhiUnlocked = () => c2BaseUnlock && c2BaseUnlock.level > 2;
+var isTribonacciUnlocked = () => tribonacciUnlock && tribonacciUnlock.level > 0;
+var hasAllMilestonesBeforeLucas = () => c3Unlock && c3Unlock.level > 0;
+var hasAllMilestonesBeforeF = () => hasAllMilestonesBeforeLucas() && isLucasCurrencyUnlocked();
+var hasAllMilestonesBeforeL = () => hasAllMilestonesBeforeF() && isF2Unlocked();
+var hasAllMilestonesBeforeC2Base = () => hasAllMilestonesBeforeL() && isL2Unlocked();
+var hasAllMilestonesBeforeTribonacci = () => hasAllMilestonesBeforeC2Base() && isC2BasePhiUnlocked();
 
 var getGroupedMilestoneDescription = (level, descriptions) => descriptions[Math.min(level, descriptions.length - 1)];
 var getGroupedMilestoneInfo = (level, infos) => infos[Math.min(level, infos.length - 1)];
@@ -213,14 +220,14 @@ var init = () => {
     {
         c2BaseUnlock = theory.createMilestoneUpgrade(4, 3);
         c2BaseUnlock.getDescription = (_) => getGroupedMilestoneDescription(c2BaseUnlock.level, [
-            "Set $c_2$ base to 11/7",
+            "Set $c_2$ base to $\\frac{11}{7}$",
             "Set $c_2$ base to 1.6",
             "Set $c_2$ base to $\\varphi$"
         ]);
         c2BaseUnlock.getInfo = (amount) => getGroupedMilestoneInfo(c2BaseUnlock.level + amount - 1, [
-            "$c_2=\\frac{11}{7}^x$",
-            "$c_2=1.6^x$",
-            "$c_2=\\varphi^x$"
+            "$c_2=\\left(\\frac{11}{7}\\right)^k$",
+            "$c_2=1.6^k$",
+            "$c_2=\\varphi^k$"
         ]);
         c2BaseUnlock.boughtOrRefunded = (_) => { invalidateEquations(); updateAvailability(); };
         c2BaseUnlock.isAvailable = false;
@@ -229,7 +236,7 @@ var init = () => {
     {
         tribonacciUnlock = theory.createMilestoneUpgrade(5, 1);
         tribonacciUnlock.description = "Unlock Tribonacci term";
-        tribonacciUnlock.info = "Multiply by $T_{\\lfloor t^{0.2}\\rfloor}$";
+        tribonacciUnlock.info = "Multiply by $T_k$, where $k=\\lfloor t^{0.2}\\rfloor$";
         tribonacciUnlock.boughtOrRefunded = (_) => { invalidateEquations(); updateAvailability(); };
         tribonacciUnlock.isAvailable = false;
     }
@@ -317,43 +324,50 @@ var invalidateEquations = () => {
 };
 
 var getDefinitionEquation = () => {
-    let result = "";
-    result += "F_0=0,\\quad F_1=1";
-    result += "\\\\";
-    result += "F_n=F_{n-1}+F_{n-2}";
-    result += "\\\\";
-    result += "L_0=2,\\quad L_1=1";
-    result += "\\\\";
-    result += "L_n=L_{n-1}+L_{n-2}";
-    result += "\\\\";
-    result += "\\varphi = \\frac{1+\\sqrt{5}}{2}";
-    return result;
+    let lines = [];
+    lines.push("F_0=0,\\quad F_1=1,\\quad F_n=F_{n-1}+F_{n-2}");
+
+    if (isLucasCurrencyUnlocked())
+        lines.push("L_0=2,\\quad L_1=1,\\quad L_n=L_{n-1}+L_{n-2}");
+
+    if (isTribonacciUnlocked())
+        lines.push("k=\\lfloor t^{0.2}\\rfloor,\\quad T_0=0,\\quad T_1=0,\\quad T_2=1,\\quad T_k=T_{k-1}+T_{k-2}+T_{k-3}");
+
+    lines.push("\\dot{t}=" + (c1.level > 0 ? "1" : "0"));
+
+    return "\\begin{matrix}" + lines.join("\\\\") + "\\end{matrix}";
 };
 
 var getDefinitionValuesEquation = () => {
-    return "";
+    let lines = [];
+    lines.push("F_n=" + getFibonacciNumber(getN(n.level)).toString(2));
+
+    if (isLucasCurrencyUnlocked())
+        lines.push("L_m=" + getLucasNumber(getM(m.level)).toString(2));
+
+    return "\\begin{matrix}" + lines.join("\\\\") + "\\end{matrix}";
 };
 
 var updateAvailability = () => {
-    let lucasMaxLevel = c3Unlock.level > 0 ? 1 : 0;
+    let lucasMaxLevel = hasAllMilestonesBeforeLucas() ? 1 : 0;
     lucasUnlock.maxLevel = Math.max(lucasUnlock.level, lucasMaxLevel);
-    lucasUnlock.isAvailable = c3Unlock.level > 0 || lucasUnlock.level > 0;
+    lucasUnlock.isAvailable = hasAllMilestonesBeforeLucas() || lucasUnlock.level > 0;
 
-    let fMaxLevel = isLucasCurrencyUnlocked() ? 2 : 0;
+    let fMaxLevel = hasAllMilestonesBeforeF() ? 2 : 0;
     fUnlock.maxLevel = Math.max(fUnlock.level, fMaxLevel);
-    fUnlock.isAvailable = isLucasCurrencyUnlocked() || fUnlock.level > 0;
+    fUnlock.isAvailable = hasAllMilestonesBeforeF() || fUnlock.level > 0;
 
-    let lMaxLevel = isF2Unlocked() ? 2 : 0;
+    let lMaxLevel = hasAllMilestonesBeforeL() ? 2 : 0;
     lUnlock.maxLevel = Math.max(lUnlock.level, lMaxLevel);
-    lUnlock.isAvailable = isF2Unlocked() || lUnlock.level > 0;
+    lUnlock.isAvailable = hasAllMilestonesBeforeL() || lUnlock.level > 0;
 
-    let c2BaseMaxLevel = isL2Unlocked() ? 3 : 0;
+    let c2BaseMaxLevel = hasAllMilestonesBeforeC2Base() ? 3 : 0;
     c2BaseUnlock.maxLevel = Math.max(c2BaseUnlock.level, c2BaseMaxLevel);
-    c2BaseUnlock.isAvailable = isL2Unlocked() || c2BaseUnlock.level > 0;
+    c2BaseUnlock.isAvailable = hasAllMilestonesBeforeC2Base() || c2BaseUnlock.level > 0;
 
-    let tribonacciMaxLevel = isC2BasePhiUnlocked() ? 1 : 0;
+    let tribonacciMaxLevel = hasAllMilestonesBeforeTribonacci() ? 1 : 0;
     tribonacciUnlock.maxLevel = Math.max(tribonacciUnlock.level, tribonacciMaxLevel);
-    tribonacciUnlock.isAvailable = isC2BasePhiUnlocked() || tribonacciUnlock.level > 0;
+    tribonacciUnlock.isAvailable = hasAllMilestonesBeforeTribonacci() || tribonacciUnlock.level > 0;
 
     c3.isAvailable = c3Unlock.level > 0;
     f1.isAvailable = isF1Unlocked();
@@ -365,7 +379,9 @@ var updateAvailability = () => {
     theory.invalidateQuaternaryValues();
 };
 
-var getRhoDot = () => {
+var getIncomeMultiplier = () => theory.publicationMultiplier * lastTickMultiplier;
+
+var getBaseRhoDot = () => {
     let value = getC1(c1.level) * getC2(c2.level) * t.max(BigNumber.ONE).pow(-0.3);
 
     if (c3Unlock.level > 0)
@@ -374,13 +390,15 @@ var getRhoDot = () => {
     if (isLucasCurrencyUnlocked())
         value *= getC4(c4.level);
 
-    if (tribonacciUnlock.level > 0)
+    if (isTribonacciUnlocked())
         value *= getTribonacciNumber(getTribonacciIndex());
 
     return value;
 };
 
-var getFDot = () => {
+var getRhoDot = () => getBaseRhoDot() * getIncomeMultiplier();
+
+var getBaseFDot = () => {
     let value = getFibonacciNumber(getN(n.level));
 
     if (isF1Unlocked())
@@ -392,9 +410,14 @@ var getFDot = () => {
     return value;
 };
 
-var getLDot = () => {
+var getFDot = () => getBaseFDot() * getIncomeMultiplier();
+
+var getBaseLDot = () => {
     if (!isLucasCurrencyUnlocked())
         return null;
+
+    if (c1.level == 0)
+        return BigNumber.ZERO;
 
     let value = getLucasNumber(getM(m.level));
 
@@ -407,21 +430,27 @@ var getLDot = () => {
     return value;
 };
 
+var getLDot = () => {
+    let base = getBaseLDot();
+    return base === null ? null : base * getIncomeMultiplier();
+};
+
 var tick = (elapsedTime, multiplier) => {
+    lastTickMultiplier = BigNumber.from(multiplier);
     let dt = BigNumber.from(elapsedTime * multiplier);
     let bonus = theory.publicationMultiplier;
 
     if (c1.level > 0)
         t += dt;
 
-    let rhoDot = getRhoDot();
+    let rhoDot = getBaseRhoDot();
     currency.value += dt * bonus * rhoDot;
 
-    let fDot = getFDot();
+    let fDot = getBaseFDot();
     currencyF.value += dt * bonus * fDot;
 
     if (isLucasCurrencyUnlocked()) {
-        currencyL.value += dt * bonus * getLDot();
+        currencyL.value += dt * bonus * getBaseLDot();
     }
 
     theory.invalidateSecondaryEquation();
@@ -430,9 +459,9 @@ var tick = (elapsedTime, multiplier) => {
 
 var getPrimaryEquation = () => {
     if (equationPage == 0) {
-        theory.primaryEquationHeight = 130;
-        theory.primaryEquationScale = 0.72;
-        return getDefinitionEquation();
+        theory.primaryEquationHeight = isLucasCurrencyUnlocked() ? 64 : 40;
+        theory.primaryEquationScale = 1;
+        return getDefinitionValuesEquation();
     }
 
     theory.primaryEquationHeight = 40;
@@ -445,22 +474,22 @@ var getPrimaryEquation = () => {
     if (isLucasCurrencyUnlocked())
         result += "c_4";
 
-    result += "t^{-0.3}";
+    if (isTribonacciUnlocked())
+        result += "T_k";
 
-    if (tribonacciUnlock.level > 0)
-        result += "T_x";
+    result += "t^{-0.3}";
 
     return result;
 };
 
 var getSecondaryEquation = () => {
     if (equationPage == 0) {
-        theory.secondaryEquationHeight = 12;
-        theory.secondaryEquationScale = 1;
-        return getDefinitionValuesEquation();
+        theory.secondaryEquationHeight = isTribonacciUnlocked() ? 120 : (isLucasCurrencyUnlocked() ? 88 : 56);
+        theory.secondaryEquationScale = isTribonacciUnlocked() ? 0.72 : 0.82;
+        return getDefinitionEquation();
     }
 
-    theory.secondaryEquationHeight = 64;
+    theory.secondaryEquationHeight = isLucasCurrencyUnlocked() ? 40 : 20;
     theory.secondaryEquationScale = 1.0;
 
     let multiplier = "";
@@ -479,16 +508,6 @@ var getSecondaryEquation = () => {
         result += "\\dot{L}=" + lMultiplier + "L_m";
     }
 
-    if (tribonacciUnlock.level > 0) {
-        result += "\\\\";
-        result += "x=\\lfloor t^{0.2}\\rfloor";
-    }
-
-    result += "\\\\";
-    result += "\\dot{t}=" + (c1.level > 0 ? "1" : "0");
-    result += "\\\\";
-    result += "t=" + t.toString(2);
-
     result += "\\end{matrix}";
     return result;
 };
@@ -496,28 +515,23 @@ var getSecondaryEquation = () => {
 var getTertiaryEquation = () => theory.latexSymbol + "=\\max\\rho^{1/\\varphi}";
 
 var getQuaternaryEntries = () => {
-    if (quaternaryEntries.length == 0) {
-        quaternaryEntries.push(new QuaternaryEntry("\\dot{\\rho}", null));
-        quaternaryEntries.push(new QuaternaryEntry("\\dot{F}", null));
-        quaternaryEntries.push(new QuaternaryEntry("\\dot{L}", null));
-        quaternaryEntries.push(new QuaternaryEntry("x", null));
-        quaternaryEntries.push(new QuaternaryEntry("T_x", null));
+    quaternaryEntries = [];
+
+    quaternaryEntries.push(new QuaternaryEntry("\\dot{\\rho}", getRhoDot().toString(2)));
+    quaternaryEntries.push(new QuaternaryEntry("\\dot{F}", getFDot().toString(2)));
+
+    if (isLucasCurrencyUnlocked()) {
+        let lDot = getLDot();
+        quaternaryEntries.push(new QuaternaryEntry("\\dot{L}", lDot ? lDot.toString(2) : BigNumber.ZERO.toString(2)));
     }
 
-    let tribonacciIndex = getTribonacciIndex();
-    quaternaryEntries[1].name = equationPage == 0 ? "F_n" : "\\dot{F}";
-    quaternaryEntries[2].name = equationPage == 0 ? "L_m" : "\\dot{L}";
-    quaternaryEntries[0].value = getRhoDot().toString(2);
-    quaternaryEntries[1].value = equationPage == 0
-        ? getFibonacciNumber(getN(n.level)).toString(2)
-        : getFDot().toString(2);
+    quaternaryEntries.push(new QuaternaryEntry("t", t.toString(2)));
 
-    let lDot = getLDot();
-    quaternaryEntries[2].value = equationPage == 0
-        ? (isLucasCurrencyUnlocked() ? getLucasNumber(getM(m.level)).toString(2) : null)
-        : (lDot ? lDot.toString(2) : null);
-    quaternaryEntries[3].value = tribonacciUnlock.level > 0 ? tribonacciIndex.toString() : null;
-    quaternaryEntries[4].value = tribonacciUnlock.level > 0 ? getTribonacciNumber(tribonacciIndex).toString(2) : null;
+    if (isTribonacciUnlocked()) {
+        let tribonacciIndex = getTribonacciIndex();
+        quaternaryEntries.push(new QuaternaryEntry("k", tribonacciIndex.toString()));
+        quaternaryEntries.push(new QuaternaryEntry("T_k", getTribonacciNumber(tribonacciIndex).toString(2)));
+    }
 
     return quaternaryEntries;
 };
@@ -685,6 +699,7 @@ var setInternalState = (state) => {
     if (values.length > 0 && values[0].length > 0)
         t = parseBigNumber(values[0]);
     equationPage = values.length > 1 ? Math.max(0, Math.min(1, parseInt(values[1]) || 1)) : 1;
+    lastTickMultiplier = BigNumber.ONE;
     invalidateEquations();
     theory.invalidateQuaternaryValues();
 };
@@ -701,6 +716,7 @@ var resetStage = () => {
     currencyL.value = BigNumber.ZERO;
     t = BigNumber.ONE;
     equationPage = 1;
+    lastTickMultiplier = BigNumber.ONE;
     tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
     theory.clearGraph();
     updateAvailability();
@@ -711,6 +727,7 @@ var resetStage = () => {
 var postPublish = () => {
     t = BigNumber.ONE;
     equationPage = 1;
+    lastTickMultiplier = BigNumber.ONE;
     tribonacciCache = [BigNumber.ZERO, BigNumber.ZERO, BigNumber.ONE];
     invalidateEquations();
     theory.invalidateQuaternaryValues();
