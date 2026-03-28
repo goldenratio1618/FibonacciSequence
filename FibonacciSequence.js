@@ -10,7 +10,7 @@ var description =
     "Grow rho with stepwise multipliers, cultivate F with recurrence, and " +
     "eventually uncover the Lucas and Tribonacci echoes hidden in the sequence.";
 var authors = "aaatanas";
-var version = 14;
+var version = 16;
 
 const PHI_VALUE = (1 + Math.sqrt(5)) / 2;
 const INV_PHI_VALUE = 1 / PHI_VALUE;
@@ -84,6 +84,7 @@ var init = () => {
         c1 = theory.createUpgrade(0, currency, new CustomCost(level => Fibonacci(level), getFibCostC1Sum, getFibCostC1Max));
         c1.getDescription = (_) => Utils.getMath(getDesc(c1.level));
         c1.getInfo = (amount) => Utils.getMathTo(getInfo(c1.level), getInfo(c1.level + amount));
+        c1.boughtOrRefunded = (_) => { theory.invalidateSecondaryEquation(); theory.invalidateQuaternaryValues(); };
     }
 
     // c2
@@ -388,6 +389,8 @@ var invalidateEquations = () => {
     theory.invalidateTertiaryEquation();
 };
 
+var getTDot = () => c1.level > 0 ? lastTickMultiplier : BigNumber.ZERO;
+
 var getDefinitionEquation = () => {
     let lines = [];
     lines.push("F_0=0,\\quad F_1=1,\\quad F_n=F_{n-1}+F_{n-2}");
@@ -395,10 +398,12 @@ var getDefinitionEquation = () => {
     if (isLucasCurrencyUnlocked())
         lines.push("L_0=2,\\quad L_1=1,\\quad L_n=L_{n-1}+L_{n-2}");
 
-    if (isTribonacciUnlocked())
-        lines.push("k=\\lfloor t^{0.2}\\rfloor,\\quad T_0=0,\\quad T_1=0,\\quad T_2=1,\\quad T_k=T_{k-1}+T_{k-2}+T_{k-3}");
+    if (isTribonacciUnlocked()) {
+        lines.push("T_0=0,\\quad T_1=0,\\quad T_2=1,\\quad T_k=T_{k-1}+T_{k-2}+T_{k-3}");
+        lines.push("k=\\lfloor t^{0.2}\\rfloor");
+    }
 
-    lines.push("\\dot{t}=" + (c1.level > 0 ? "1" : "0"));
+    lines.push("\\dot{t}=" + getTDot().toString(2));
 
     return "\\begin{matrix}" + lines.join("\\\\") + "\\end{matrix}";
 };
