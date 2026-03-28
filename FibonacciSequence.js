@@ -10,7 +10,7 @@ var description =
     "Grow rho with stepwise multipliers, cultivate F with recurrence, and " +
     "eventually uncover the Lucas and Tribonacci echoes hidden in the sequence.";
 var authors = "aaatanas";
-var version = 12;
+var version = 13;
 
 const PHI_VALUE = (1 + Math.sqrt(5)) / 2;
 const INV_PHI_VALUE = 1 / PHI_VALUE;
@@ -614,8 +614,10 @@ var getC2BaseDisplay = () => {
 };
 
 var getC2PurchaseBaseDisplay = () => {
+    if (isC2BasePhiUnlocked()) return "\\varphi";
+    if (isC2Base16Unlocked()) return "1.6";
     if (isC2Base117Unlocked()) return "(11/7)";
-    return getC2BaseDisplay();
+    return "1.5";
 };
 
 var getC2Base = () => {
