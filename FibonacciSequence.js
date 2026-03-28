@@ -10,7 +10,7 @@ var description =
     "Grow rho with stepwise multipliers, cultivate F with recurrence, and " +
     "eventually uncover the Lucas and Tribonacci echoes hidden in the sequence.";
 var authors = "aaatanas";
-var version = 13;
+var version = 14;
 
 const PHI_VALUE = (1 + Math.sqrt(5)) / 2;
 const INV_PHI_VALUE = 1 / PHI_VALUE;
@@ -19,6 +19,7 @@ const INV_SQRT5_VALUE = 1 / SQRT5_VALUE;
 
 const phi = BigNumber.from(PHI_VALUE);
 const sqrt5 = BigNumber.from(SQRT5_VALUE);
+const END_TAU = BigNumber.from("1e600");
 
 const milestoneRhoPowers = [8, 13, 21, 34, 55, 89, 144, 233, 377, 610];
 
@@ -365,6 +366,18 @@ var init = () => {
     story10 += "What if you made your equation grow on its own?\n";
     story10 += "Then maybe, finally, time would be on your side.\n";
     theory.createStoryChapter(10, "Tribonacci Time", story10, () => tribonacciUnlock.level > 0);
+
+    let story11 = "";
+    story11 += "At last, the patterns stop resisting.\n";
+    story11 += "Fibonacci, Lucas, and Tribonacci settle into the same grand rhythm.\n";
+    story11 += "What began with rabbits in a meadow has become something much larger.\n";
+    story11 += "You gather your notes, revise the final draft, and send it out.\n";
+    story11 += "The responses come back faster than you expected.\n";
+    story11 += "Your work is accepted, your interviews turn into offers, and the long months of doubt finally loosen their grip.\n";
+    story11 += "You look over the page one last time and smile.\n";
+    story11 += "The sequence can still grow, but your part in the story feels complete.\n\n\n";
+    story11 += "The End.";
+    theory.createStoryChapter(11, "The End", story11, () => theory.tau >= END_TAU); // unlocked at tau = e600
 
     updateAvailability();
 };
