@@ -60,7 +60,7 @@ var getGroupedMilestoneDescription = (level, descriptions) => descriptions[Math.
 var getMilestoneTransitionInfo = (level, amount, states) => {
     let from = states[Math.min(level, states.length - 1)];
     let to = states[Math.min(level + amount, states.length - 1)];
-    return "$" + from + "$ --> $" + to + "$";
+    return "$" + from + " \\rightarrow " + to + "$";
 };
 var canRefundC3Milestone = (_) => lucasUnlock.level == 0 && fUnlock.level == 0 && lUnlock.level == 0 && c2BaseUnlock.level == 0 && tribonacciUnlock.level == 0;
 var canRefundLucasMilestone = (_) => fUnlock.level == 0 && lUnlock.level == 0 && c2BaseUnlock.level == 0 && tribonacciUnlock.level == 0;
@@ -281,57 +281,90 @@ var init = () => {
 
     let story2 = "";
     story2 += "You idly sit at your desk when you notice two spiders crawl across it.\n";
-    story2 += "It is a sibling sequence, warm with familiarity.\n";
-    story2 += "You light a new currency, L, and wick it with m.\n";
+    story2 += "You realize that you'd made an assumption: that the initial number of animals was 0 adults and 1 baby.\n";
+    story2 += "What happens if you change that 0 into a 2?\n";
+    story2 += "You create a new sequence exploring exactly that, and call it the Lucas numbers.\n";
     theory.createStoryChapter(2, "Spiders", story2, () => isLucasCurrencyUnlocked());
 
     let story3 = "";
-    story3 += "A farmer shares a ledger of rabbits and the rhythm of their months.\n";
-    story3 += "Each line grows from the two before it, plain and perfect.\n";
-    story3 += "You coin f_1 to keep time with the births.\n";
-    theory.createStoryChapter(3, "Rabbit Ledger", story3, () => isF1Unlocked());
+    story3 += "You're making great progress.\n";
+    story3 += "Your sequences are growing nicely.\n";
+    story3 += "To celebrate your progress, you add another term f1 to your theory.\n";
+    story3 += "Maybe it will accelerate your progress even faster.\n";
+    theory.createStoryChapter(3, "Explosion of Progress", story3, () => isF1Unlocked());
 
     let story4 = "";
-    story4 += "Two streams of growth twist together like braided twine.\n";
-    story4 += "The pattern doubles its confidence, asking for a second guide.\n";
-    story4 += "You introduce f_2 and the current steadies.\n";
-    theory.createStoryChapter(4, "Twin Currents", story4, () => isF2Unlocked());
+    story4 += "You stare at your equation some more.\n";
+    story4 += "You have terms that double and triple.\n";
+    story4 += "The next Fibonacci number after 2 and 3 is 5.\n";
+    story4 += "Surely bigger is better, right?\n";
+    story4 += "You create a new term f2 that quintuples.\n";
+    theory.createStoryChapter(4, "Quintuple Growth", story4, () => isF2Unlocked());
 
     let story5 = "";
-    story5 += "Leaves fall in alternating counts, never quite Fibonacci.\n";
-    story5 += "The Lucas rhythm shows a different kind of harmony.\n";
-    story5 += "You craft l_1 to amplify the chorus.\n";
-    theory.createStoryChapter(5, "Leafy Multipliers", story5, () => isL1Unlocked());
+    story5 += "You wake up one morning with a realization.\n";
+    story5 += "So far, you've only been manipulating the Fibonacci part of your equation.\n";
+    story5 += "You'd been neglecting the Lucas sequence.\n";
+    story5 += "You add a term l1 to try to speed up its growth.\n";
+    theory.createStoryChapter(5, "Lucas Multiplier", story5, () => isL1Unlocked());
 
     let story6 = "";
-    story6 += "A bell tower rings in a pattern of threes.\n";
-    story6 += "Each chime stacks on the last two, but with its own twist.\n";
-    story6 += "You add l_2 and the resonance deepens.\n";
-    theory.createStoryChapter(6, "Chiming Steps", story6, () => isL2Unlocked());
+    story6 += "That seemed to work well!\n";
+    story6 += "The Lucas sequence is growing faster now.\n";
+    story6 += "Next, you try to replicate your logic behind f2 to the Lucas sequence.\n";
+    story6 += "You can't use 5 anymore since it's not a Lucas number.\n";
+    story6 += "What's a Lucas number that you haven't used yet?\n";
+    story6 += "Four! You create a term with base 4.\n";
+    theory.createStoryChapter(6, "Home Run", story6, () => isL2Unlocked());
 
     let story7 = "";
-    story7 += "A scratched note in the margin reads 11 over 7.\n";
-    story7 += "It is not the truth, but it points the right way.\n";
-    story7 += "You let c_2 lean into the fraction and watch the pattern sharpen.\n";
-    theory.createStoryChapter(7, "Fractional Hint", story7, () => isC2Base117Unlocked());
+    story7 += "Your progress is getting very slow.\n";
+    story7 += "What are you missing?\n";
+    story7 += "There's something about these sequences that you can't quite put your finger on.\n";
+    story7 += "You look over your equation again and notice that you haven't looked at the rho equation in a while.\n";
+    story7 += "Examining it closer, you notice that the c2 term base can be expressed as a ratio of two Fibonacci numbers: 3/2.\n";
+    story7 += "What if you instead looked at the ratio of some Lucas numbers?\n";
+    story7 += "After 4, which you've already used, the next two Lucas numbers are 7 and 11.\n";
+    story7 += "What if you based c2 on that ratio instead?\n";
+    story7 += "Could it help your research grow faster?\n";
+    theory.createStoryChapter(7, "Lucas Ratio", story7, () => isC2Base117Unlocked());
 
     let story8 = "";
-    story8 += "Your ratio refuses to settle at 11/7.\n";
-    story8 += "It tilts a little higher, closer to a secret you almost remember.\n";
-    story8 += "You nudge c_2 to 1.6 and watch the notes brighten.\n";
-    theory.createStoryChapter(8, "Rough Ratio", story8, () => isC2Base16Unlocked());
+    story8 += "That seemed to work wonders!\n";
+    story8 += "But once again, you find your progress slow down.\n";
+    story8 += "What if you switch back to Fibonacci ratios, but use the next pair of numbers?\n";
+    story8 += "Instead of 3/2 or 11/7, you try switching c2 to 8/5.\n";
+    theory.createStoryChapter(8, "Return to Fibonacci", story8, () => isC2Base16Unlocked());
 
     let story9 = "";
-    story9 += "Shells, waves, and leaves keep whispering the same name.\n";
-    story9 += "The golden ratio arrives like a well-timed knock.\n";
-    story9 += "You let c_2 speak in phi, and the room goes quiet.\n";
-    theory.createStoryChapter(9, "Golden Whisper", story9, () => isC2BasePhiUnlocked());
+    story9 += "What's the right ratio for c2?\n";
+    story9 += "You seem to be getting close, but it's still not quite right.\n";
+    story9 += "Making the numbers bigger seems to help somehow.\n";
+    story9 += "What's the limit of ratios for the Fibonacci sequence as the numbers get big?\n";
+    story9 += "What about the Lucas sequence?\n";
+    story9 += "They both have the same recurrence relations, just different initial conditions.\n";
+    story9 += "Do the initial conditions matter for the ratio?\n";
+    story9 += "Then you have the realization.\n";
+    story9 += "The asymptotics of the sequences make them converge to the same ratio.\n";
+    story9 += "You compute this ratio. It's beautifully simple.\n";
+    story9 += "You name it the Golden Ratio, and lock it in as the final base of c2.\n";
+    story9 += "Your theory will reach new heights now.\n";
+    theory.createStoryChapter(9, "The Golden Ratio", story9, () => isC2BasePhiUnlocked());
 
     let story10 = "";
-    story10 += "A dream arrives in three-beat steps, not two.\n";
-    story10 += "The Tribonacci rhythm waltzes through your notes.\n";
-    story10 += "You write the term down and feel the sequence breathe.\n";
-    theory.createStoryChapter(10, "Tribonacci Dream", story10, () => tribonacciUnlock.level > 0);
+    story10 += "You pace your room in frustration.\n";
+    story10 += "The pressures of time are starting to really get to you.\n";
+    story10 += "Your thesis is due soon. Your homework is piling up.\n";
+    story10 += "You really need to schedule your postdoc interviews.\n";
+    story10 += "But the more time you spend staring at your work, the slower it seems to go.\n";
+    story10 += "The rhythm of recurrance drilling into your head.\n";
+    story10 += "You need to break the pattern somehow.\n";
+    story10 += "You realize that all this time, you'd only ever considered depth-two recurrence.\n";
+    story10 += "What if you added another term?\n";
+    story10 += "And you realize that you can't keep doing all of the additions yourself.\n";
+    story10 += "What if you made your equation grow on its own?\n";
+    story10 += "Then maybe, finally, time would be on your side.\n";
+    theory.createStoryChapter(10, "Tribonacci Time", story10, () => tribonacciUnlock.level > 0);
 
     updateAvailability();
 };
