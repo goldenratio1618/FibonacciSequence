@@ -6,11 +6,14 @@ import { Utils } from "./api/Utils";
 var id = "fibonacci_sequence";
 var name = "Fibonacci Sequence";
 var description =
-    "Follow the whisper of Fibonacci numbers as they braid through time. " +
-    "Grow rho with stepwise multipliers, cultivate F with recurrence, and " +
-    "eventually uncover the Lucas and Tribonacci echoes hidden in the sequence.";
-var authors = "aaatanas";
-var version = 16;
+    "In this theory, go from rabbits to Binet's Formula as you uncover the secrets of the Fibonacci Sequence. " +
+    "Your journey will also take you into studying related sequences, like the Lucas and Tribonacci sequences. "
+    "These sequences are defined by recurrence relations, and their growth is inextricably linked to the Golden Ratio." +
+    "They're known for appearing in many places in nature, including in sunflowers, pinecones, and more. " +
+    "But be careful! As a grad student, you're under pressure to complete your research and graduate. " +
+    "Time is very much not on your side.";
+var authors = "Python's Koala\n\nThanks to basically, i am little cat for helping debug the theory.";
+var version = 17;
 
 const PHI_VALUE = (1 + Math.sqrt(5)) / 2;
 const INV_PHI_VALUE = 1 / PHI_VALUE;
